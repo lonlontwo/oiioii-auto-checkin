@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OiiOii 領便當專區</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -35,6 +37,7 @@
             background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
         }
 
@@ -241,7 +244,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .link-btn {
@@ -252,6 +257,7 @@
             padding: 10px 20px;
             border-radius: 10px;
             margin-top: 15px;
+            margin-right: 10px;
             transition: background 0.3s;
         }
 
@@ -259,30 +265,63 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        .realtime-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #10b981;
+        }
+
+        .realtime-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
         @media (max-width: 600px) {
             .points-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .header h1 {
                 font-size: 1.8rem;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>🎁 OiiOii 領便當專區</h1>
             <p>自動簽到系統狀態監控</p>
+            <div class="realtime-indicator" style="margin-top: 10px;">
+                <span class="realtime-dot"></span>
+                <span>即時更新</span>
+            </div>
         </div>
 
         <div class="status-card">
             <div class="status-header">
                 <span class="status-title">📊 點數狀態</span>
-                <span class="status-badge success" id="statusBadge">運行中</span>
+                <span class="status-badge success" id="statusBadge">載入中...</span>
             </div>
-            
+
             <div class="points-grid">
                 <div class="points-box current">
                     <div class="points-label">當前點數</div>
@@ -302,7 +341,8 @@
 
             <div style="text-align: center; margin-top: 20px;">
                 <a href="https://www.oiioii.ai/" target="_blank" class="link-btn">🔗 前往 OiiOii.ai</a>
-                <a href="https://github.com/lonlontwo/oiioii-auto-checkin/actions" target="_blank" class="link-btn">📋 查看執行記錄</a>
+                <a href="https://github.com/lonlontwo/oiioii-auto-checkin/actions" target="_blank" class="link-btn">📋
+                    查看執行記錄</a>
             </div>
         </div>
 
@@ -321,42 +361,38 @@
     </div>
 
     <script>
-        // 數據來源 URL（從 GitHub Actions artifacts 或其他地方取得）
-        const DATA_URL = 'data/checkin-data.json';
+        // Supabase 設定
+        const SUPABASE_URL = 'https://djmskkwpphomwmokiwf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_UUxhIW-g';
+        const TABLE_NAME = 'oiioii便當專員';
+
+        // 初始化 Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function loadData() {
             try {
-                const response = await fetch(DATA_URL + '?t=' + Date.now());
-                if (response.ok) {
-                    const data = await response.json();
-                    updateUI(data);
-                } else {
-                    throw new Error('Data not found');
-                }
+                const { data, error } = await supabase
+                    .from(TABLE_NAME)
+                    .select('*')
+                    .eq('id', 1)
+                    .single();
+
+                if (error) throw error;
+
+                updateUI(data);
             } catch (error) {
-                console.log('Using mock data...');
-                // 使用模擬資料（實際部署時會從真實 API 取得）
-                const mockData = {
-                    currentPoints: 1310,
-                    earnedPoints: 900,
-                    lastCheckin: new Date().toISOString(),
-                    status: 'success',
-                    history: [
-                        { time: '2026-01-08 18:00', points: '+300', status: 'success' },
-                        { time: '2026-01-08 12:00', points: '+300', status: 'success' },
-                        { time: '2026-01-08 06:00', points: '+300', status: 'success' },
-                        { time: '2026-01-08 00:00', points: '+0', status: 'failed' },
-                        { time: '2026-01-07 18:00', points: '+300', status: 'success' },
-                    ]
-                };
-                updateUI(mockData);
+                console.error('載入失敗:', error);
+                document.getElementById('statusBadge').textContent = '❌ 載入失敗';
+                document.getElementById('statusBadge').className = 'status-badge error';
             }
         }
 
         function updateUI(data) {
             // 更新點數
-            document.getElementById('currentPoints').textContent = data.currentPoints?.toLocaleString() || '--';
-            document.getElementById('earnedPoints').textContent = data.earnedPoints?.toLocaleString() || '--';
+            document.getElementById('currentPoints').textContent =
+                (data.current_points || 0).toLocaleString();
+            document.getElementById('earnedPoints').textContent =
+                (data.earned_points || 0).toLocaleString();
 
             // 更新狀態
             const badge = document.getElementById('statusBadge');
@@ -373,28 +409,50 @@
 
             // 更新歷史記錄
             const historyList = document.getElementById('historyList');
-            if (data.history && data.history.length > 0) {
-                historyList.innerHTML = data.history.map(item => `
+            const history = data.history || [];
+
+            if (history.length > 0) {
+                historyList.innerHTML = history.map(item => `
                     <div class="history-item">
-                        <span class="history-time">${item.time}</span>
-                        <span class="history-points">${item.points}</span>
-                        <span class="history-status ${item.status}">${item.status === 'success' ? '成功' : '失敗'}</span>
+                        <span class="history-time">${item.time || '--'}</span>
+                        <span class="history-points">${item.points || '+0'}</span>
+                        <span class="history-status ${item.status === 'success' ? 'success' : 'failed'}">
+                            ${item.status === 'success' ? '成功' : '失敗'}
+                        </span>
                     </div>
                 `).join('');
             } else {
-                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8;">尚無記錄</p>';
+                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">尚無簽到記錄</p>';
             }
 
             // 更新時間
-            document.getElementById('lastUpdate').textContent = 
+            document.getElementById('lastUpdate').textContent =
                 '最後更新：' + new Date().toLocaleString('zh-TW');
+        }
+
+        // 設置即時訂閱
+        function setupRealtimeSubscription() {
+            supabase
+                .channel('checkin-changes')
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: TABLE_NAME },
+                    (payload) => {
+                        console.log('收到即時更新:', payload);
+                        if (payload.new) {
+                            updateUI(payload.new);
+                        }
+                    }
+                )
+                .subscribe();
         }
 
         // 初始載入
         loadData();
+        setupRealtimeSubscription();
 
-        // 每 5 分鐘自動更新
-        setInterval(loadData, 5 * 60 * 1000);
+        // 每 30 秒自動更新（備用）
+        setInterval(loadData, 30 * 1000);
     </script>
 </body>
+
 </html>

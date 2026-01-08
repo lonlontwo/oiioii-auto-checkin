@@ -1,15 +1,28 @@
 /**
  * OiiOii.ai 雲端自動簽到腳本
  * 用途：在 GitHub Actions 等雲端環境執行
- * 功能：自動簽到 + 抓取點數 + 更新數據檔案
+ * 功能：自動簽到 + 抓取點數 + 保存到 Supabase
  */
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
-// 數據檔案路徑
-const DATA_FILE = path.join(__dirname, 'dashboard', 'data', 'checkin-data.json');
+// Supabase 設定
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://djmskkwpphomwmokiwf.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_UUxhIW-g';
+const TABLE_NAME = 'oiioii便當專員';
+
+let supabase = null;
+
+function getSupabase() {
+    if (!supabase) {
+        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('🔥 Supabase 已初始化');
+    }
+    return supabase;
+}
 
 // 從環境變數或檔案讀取 Cookies
 function getCookiesData() {
@@ -32,35 +45,59 @@ function getCookiesData() {
     throw new Error('找不到 Cookies！請先執行 npm run export-cookies');
 }
 
-// 讀取現有數據
-function loadData() {
+// 讀取 Supabase 數據
+async function loadCheckinData() {
     try {
-        if (fs.existsSync(DATA_FILE)) {
-            return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-        }
-    } catch (e) {
-        console.log('⚠️ 無法讀取現有數據，使用預設值');
-    }
+        const client = getSupabase();
+        const { data, error } = await client
+            .from(TABLE_NAME)
+            .select('*')
+            .eq('id', 1)
+            .single();
 
+        if (error) {
+            console.log('⚠️ Supabase 讀取失敗:', error.message);
+            return getDefaultData();
+        }
+
+        console.log('📖 從 Supabase 讀取數據成功');
+        return data;
+    } catch (error) {
+        console.error('❌ Supabase 讀取失敗:', error.message);
+        return getDefaultData();
+    }
+}
+
+// 保存數據到 Supabase
+async function saveCheckinData(data) {
+    try {
+        const client = getSupabase();
+        data.updated_at = new Date().toISOString();
+        data.id = 1;
+
+        const { error } = await client
+            .from(TABLE_NAME)
+            .upsert(data, { onConflict: 'id' });
+
+        if (error) throw error;
+
+        console.log('💾 數據已保存到 Supabase');
+        return true;
+    } catch (error) {
+        console.error('❌ Supabase 保存失敗:', error.message);
+        return false;
+    }
+}
+
+function getDefaultData() {
     return {
-        currentPoints: 0,
-        earnedPoints: 0,
-        lastCheckin: null,
+        id: 1,
+        current_points: 0,
+        earned_points: 0,
+        last_checkin: null,
         status: 'pending',
         history: []
     };
-}
-
-// 保存數據
-function saveData(data) {
-    // 確保目錄存在
-    const dir = path.dirname(DATA_FILE);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    console.log('💾 已保存數據到:', DATA_FILE);
 }
 
 async function checkin() {
@@ -69,8 +106,8 @@ async function checkin() {
     console.log(`🚀 [${timeStr}] 開始雲端自動簽到...`);
 
     // 載入現有數據
-    let data = loadData();
-    let pointsBefore = data.currentPoints || 0;
+    let data = await loadCheckinData();
+    let pointsBefore = data.current_points || 0;
     let checkinResult = { time: timeStr, points: '+0', status: 'failed' };
 
     let browser;
@@ -110,8 +147,8 @@ async function checkin() {
         // 注入 localStorage
         if (cookiesData.localStorage) {
             console.log('💾 注入 localStorage...');
-            await page.evaluate((data) => {
-                for (const [key, value] of Object.entries(data)) {
+            await page.evaluate((storageData) => {
+                for (const [key, value] of Object.entries(storageData)) {
                     window.localStorage.setItem(key, value);
                 }
             }, cookiesData.localStorage);
@@ -175,13 +212,13 @@ async function checkin() {
             status: clicked ? 'success' : 'failed'
         };
 
-        data.currentPoints = pointsAfter > 0 ? pointsAfter : pointsBefore;
-        data.earnedPoints = (data.earnedPoints || 0) + earnedThisTime;
-        data.lastCheckin = startTime.toISOString();
+        data.current_points = pointsAfter > 0 ? pointsAfter : pointsBefore;
+        data.earned_points = (data.earned_points || 0) + earnedThisTime;
+        data.last_checkin = startTime.toISOString();
         data.status = clicked ? 'success' : 'pending';
 
-        // 添加到歷史記錄（最多保留 20 筆）
-        data.history = [checkinResult, ...(data.history || [])].slice(0, 20);
+        // 添加到歷史記錄（最多保留 50 筆）
+        data.history = [checkinResult, ...(data.history || [])].slice(0, 50);
 
         const endTime = new Date();
         const duration = (endTime - startTime) / 1000;
@@ -191,7 +228,7 @@ async function checkin() {
         if (process.env.GITHUB_OUTPUT) {
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=success\n`);
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `clicked=${clicked}\n`);
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, `points=${data.currentPoints}\n`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `points=${data.current_points}\n`);
         }
 
     } catch (error) {
@@ -199,17 +236,15 @@ async function checkin() {
 
         checkinResult.status = 'failed';
         data.status = 'error';
-        data.history = [checkinResult, ...(data.history || [])].slice(0, 20);
+        data.history = [checkinResult, ...(data.history || [])].slice(0, 50);
 
         if (process.env.GITHUB_OUTPUT) {
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=error\n`);
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `error=${error.message}\n`);
         }
-
-        // 不要 exit(1)，讓數據仍然可以保存
     } finally {
-        // 保存數據
-        saveData(data);
+        // 保存數據到 Supabase
+        await saveCheckinData(data);
 
         if (browser) {
             await browser.close();
@@ -221,18 +256,14 @@ async function checkin() {
 // 從頁面抓取點數
 async function extractPoints(page) {
     try {
-        // 嘗試多種方式抓取點數
         const points = await page.evaluate(() => {
-            // 方法 1: 尋找包含數字的元素（通常在右上角）
             const allElements = document.querySelectorAll('*');
             for (const el of allElements) {
                 const text = el.textContent?.trim() || '';
-                // 尋找類似 "1,310" 或 "Free Points" 附近的數字
                 const match = text.match(/^[\d,]+$/);
                 if (match && text.length < 10) {
                     const num = parseInt(text.replace(/,/g, ''));
                     if (num > 0 && num < 1000000) {
-                        // 檢查是否在頁面右上角區域
                         const rect = el.getBoundingClientRect();
                         if (rect.right > window.innerWidth * 0.7 && rect.top < 100) {
                             return num;
@@ -241,7 +272,6 @@ async function extractPoints(page) {
                 }
             }
 
-            // 方法 2: 尋找 "Point" 相關元素
             const pointElements = document.querySelectorAll('[class*="point" i], [class*="credit" i]');
             for (const el of pointElements) {
                 const text = el.textContent || '';
@@ -265,7 +295,6 @@ async function extractPoints(page) {
 async function tryClickCheckinButton(page) {
     let clicked = false;
 
-    // 方法 1: 尋找包含 "Free" 的可點擊元素
     try {
         const elements = await page.$$('*');
         for (const element of elements) {
@@ -294,7 +323,6 @@ async function tryClickCheckinButton(page) {
         console.log(`   搜尋失敗: ${e.message}`);
     }
 
-    // 方法 2: XPath
     if (!clicked) {
         try {
             const [button] = await page.$x("//*[contains(text(), 'Free')]");
@@ -308,7 +336,6 @@ async function tryClickCheckinButton(page) {
         }
     }
 
-    // 方法 3: 點擊座標（備用）
     if (!clicked) {
         console.log('   嘗試點擊右上角...');
         try {
