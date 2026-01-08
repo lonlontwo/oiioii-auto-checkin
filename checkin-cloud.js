@@ -146,16 +146,34 @@ async function checkin() {
 
 async function extractPoints(page) {
     return await page.evaluate(() => {
-        const text = document.body.innerText;
-        const matches = text.match(/(\d,?\d*)\s*Points?/i);
-        if (matches) return parseInt(matches[1].replace(/,/g, ''));
-        // 備用搜尋
-        const els = Array.from(document.querySelectorAll('*'));
-        for (let el of els) {
-            if (el.innerText.match(/^\d,?\d*$/) && el.getBoundingClientRect().top < 100) {
-                return parseInt(el.innerText.replace(/,/g, ''));
+        // 方法 1: 尋找導覽列中的數字
+        const navItems = Array.from(document.querySelectorAll('nav *, .ant-layout-header *'));
+        for (let el of navItems) {
+            const text = el.innerText?.trim();
+            if (text && /^\d[\d,]*$/.test(text)) {
+                return parseInt(text.replace(/,/g, ''));
             }
         }
+
+        // 方法 2: 全域搜尋有 "Points" 文字的鄰近數字
+        const bodyText = document.body.innerText;
+        const pointMatch = bodyText.match(/(\d[\d,]*)\s*Points/i);
+        if (pointMatch) return parseInt(pointMatch[1].replace(/,/g, ''));
+
+        // 方法 3: 尋找右上角特定區域
+        const possiblePoints = Array.from(document.querySelectorAll('*'))
+            .filter(el => {
+                const rect = el.getBoundingClientRect();
+                return rect.top < 100 && rect.right > window.innerWidth * 0.7;
+            });
+
+        for (let el of possiblePoints) {
+            const text = el.innerText?.trim();
+            if (text && /^\d[\d,]*$/.test(text) && text.length < 10) {
+                return parseInt(text.replace(/,/g, ''));
+            }
+        }
+
         return 0;
     });
 }
