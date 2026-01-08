@@ -42,6 +42,8 @@ jobs:
       - name: 🎁 Run daily checkin
         env:
           OIIOII_COOKIES: ${{ secrets.OIIOII_COOKIES }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: node checkin-cloud.js
         timeout-minutes: 5
       
