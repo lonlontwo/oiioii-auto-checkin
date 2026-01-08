@@ -1,0 +1,18 @@
+{
+    "name": "oiioii-auto-checkin",
+    "version": "1.0.0",
+    "description": "OiiOii.ai 自動每日簽到系統",
+    "main": "checkin.js",
+    "scripts": {
+        "login": "node login.js",
+        "checkin": "node checkin.js",
+        "export-cookies": "node export-cookies.js",
+        "checkin-cloud": "node checkin-cloud.js",
+        "test": "node checkin.js --test"
+    },
+    "dependencies": {
+        "puppeteer": "^21.6.1"
+    },
+    "author": "",
+    "license": "MIT"
+}

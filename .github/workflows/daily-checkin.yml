@@ -1,0 +1,54 @@
+name: OiiOii Daily Checkin
+
+on:
+  # 每 6 小時執行一次（台灣時間 00:00、06:00、12:00、18:00）
+  schedule:
+    - cron: '0 16 * * *'   # UTC 16:00 = 台灣 00:00
+    - cron: '0 22 * * *'   # UTC 22:00 = 台灣 06:00
+    - cron: '0 4 * * *'    # UTC 04:00 = 台灣 12:00
+    - cron: '0 10 * * *'   # UTC 10:00 = 台灣 18:00
+  
+  # 也可以手動觸發
+  workflow_dispatch:
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🌐 Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            libxkbcommon0 \
+            libgbm1 \
+            libasound2
+      
+      - name: 🎁 Run daily checkin
+        env:
+          OIIOII_COOKIES: ${{ secrets.OIIOII_COOKIES }}
+        run: node checkin-cloud.js
+      
+      - name: 📸 Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: |
+            screenshot-before.png
+            screenshot-after.png
+          retention-days: 7
