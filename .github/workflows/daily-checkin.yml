@@ -36,12 +36,15 @@ jobs:
             libdrm2 \
             libxkbcommon0 \
             libgbm1 \
-            libasound2
+            libasound2t64 || sudo apt-get install -y libasound2 || true
+          # 使用 Puppeteer 內建的 Chromium
+          npx puppeteer browsers install chrome
       
       - name: 🎁 Run daily checkin
         env:
           OIIOII_COOKIES: ${{ secrets.OIIOII_COOKIES }}
         run: node checkin-cloud.js
+        timeout-minutes: 5
       
       - name: 📸 Upload screenshots
         uses: actions/upload-artifact@v4
@@ -51,4 +54,5 @@ jobs:
           path: |
             screenshot-before.png
             screenshot-after.png
+          if-no-files-found: ignore
           retention-days: 7
