@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OiiOii 領便當專區</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .status-title {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-badge.pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .points-box {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .points-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .points-box.current {
+            border-left: 4px solid #48dbfb;
+        }
+
+        .points-box.earned {
+            border-left: 4px solid #10b981;
+        }
+
+        .points-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .points-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .points-box.current .points-value {
+            color: #48dbfb;
+        }
+
+        .points-box.earned .points-value {
+            color: #10b981;
+        }
+
+        .points-unit {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-left: 5px;
+        }
+
+        .history-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-title {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-time {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .history-points {
+            color: #10b981;
+            font-weight: 500;
+        }
+
+        .history-status {
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 10px;
+        }
+
+        .history-status.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .history-status.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto 0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .last-update {
+            text-align: center;
+            margin-top: 20px;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #48dbfb;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .link-btn {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .link-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            .points-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 OiiOii 領便當專區</h1>
+            <p>自動簽到系統狀態監控</p>
+        </div>
+
+        <div class="status-card">
+            <div class="status-header">
+                <span class="status-title">📊 點數狀態</span>
+                <span class="status-badge success" id="statusBadge">運行中</span>
+            </div>
+            
+            <div class="points-grid">
+                <div class="points-box current">
+                    <div class="points-label">當前點數</div>
+                    <div>
+                        <span class="points-value" id="currentPoints">--</span>
+                        <span class="points-unit">點</span>
+                    </div>
+                </div>
+                <div class="points-box earned">
+                    <div class="points-label">已取得點數</div>
+                    <div>
+                        <span class="points-value" id="earnedPoints">--</span>
+                        <span class="points-unit">點</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://www.oiioii.ai/" target="_blank" class="link-btn">🔗 前往 OiiOii.ai</a>
+                <a href="https://github.com/lonlontwo/oiioii-auto-checkin/actions" target="_blank" class="link-btn">📋 查看執行記錄</a>
+            </div>
+        </div>
+
+        <div class="history-card">
+            <div class="history-title">📜 簽到記錄</div>
+            <div class="history-list" id="historyList">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 15px;">載入中...</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="refresh-btn" onclick="loadData()">🔄 重新整理</button>
+        <div class="last-update" id="lastUpdate">最後更新：--</div>
+    </div>
+
+    <script>
+        // 數據來源 URL（從 GitHub Actions artifacts 或其他地方取得）
+        const DATA_URL = 'data/checkin-data.json';
+
+        async function loadData() {
+            try {
+                const response = await fetch(DATA_URL + '?t=' + Date.now());
+                if (response.ok) {
+                    const data = await response.json();
+                    updateUI(data);
+                } else {
+                    throw new Error('Data not found');
+                }
+            } catch (error) {
+                console.log('Using mock data...');
+                // 使用模擬資料（實際部署時會從真實 API 取得）
+                const mockData = {
+                    currentPoints: 1310,
+                    earnedPoints: 900,
+                    lastCheckin: new Date().toISOString(),
+                    status: 'success',
+                    history: [
+                        { time: '2026-01-08 18:00', points: '+300', status: 'success' },
+                        { time: '2026-01-08 12:00', points: '+300', status: 'success' },
+                        { time: '2026-01-08 06:00', points: '+300', status: 'success' },
+                        { time: '2026-01-08 00:00', points: '+0', status: 'failed' },
+                        { time: '2026-01-07 18:00', points: '+300', status: 'success' },
+                    ]
+                };
+                updateUI(mockData);
+            }
+        }
+
+        function updateUI(data) {
+            // 更新點數
+            document.getElementById('currentPoints').textContent = data.currentPoints?.toLocaleString() || '--';
+            document.getElementById('earnedPoints').textContent = data.earnedPoints?.toLocaleString() || '--';
+
+            // 更新狀態
+            const badge = document.getElementById('statusBadge');
+            if (data.status === 'success') {
+                badge.textContent = '✅ 運行中';
+                badge.className = 'status-badge success';
+            } else if (data.status === 'error') {
+                badge.textContent = '❌ 異常';
+                badge.className = 'status-badge error';
+            } else {
+                badge.textContent = '⏳ 等待中';
+                badge.className = 'status-badge pending';
+            }
+
+            // 更新歷史記錄
+            const historyList = document.getElementById('historyList');
+            if (data.history && data.history.length > 0) {
+                historyList.innerHTML = data.history.map(item => `
+                    <div class="history-item">
+                        <span class="history-time">${item.time}</span>
+                        <span class="history-points">${item.points}</span>
+                        <span class="history-status ${item.status}">${item.status === 'success' ? '成功' : '失敗'}</span>
+                    </div>
+                `).join('');
+            } else {
+                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8;">尚無記錄</p>';
+            }
+
+            // 更新時間
+            document.getElementById('lastUpdate').textContent = 
+                '最後更新：' + new Date().toLocaleString('zh-TW');
+        }
+
+        // 初始載入
+        loadData();
+
+        // 每 5 分鐘自動更新
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

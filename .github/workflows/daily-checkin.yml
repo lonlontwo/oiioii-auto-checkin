@@ -8,7 +8,7 @@ on:
     - cron: '0 4 * * *'    # UTC 04:00 = 台灣 12:00
     - cron: '0 10 * * *'   # UTC 10:00 = 台灣 18:00
   
-  # 也可以手動觸發
+  # 手動觸發
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,6 @@ jobs:
             libxkbcommon0 \
             libgbm1 \
             libasound2t64 || sudo apt-get install -y libasound2 || true
-          # 使用 Puppeteer 內建的 Chromium
           npx puppeteer browsers install chrome
       
       - name: 🎁 Run daily checkin
@@ -45,6 +44,14 @@ jobs:
           OIIOII_COOKIES: ${{ secrets.OIIOII_COOKIES }}
         run: node checkin-cloud.js
         timeout-minutes: 5
+      
+      - name: 📊 Commit data update
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add dashboard/data/checkin-data.json || true
+          git diff --staged --quiet || git commit -m "📊 更新簽到數據 $(date +'%Y-%m-%d %H:%M')"
+          git push || true
       
       - name: 📸 Upload screenshots
         uses: actions/upload-artifact@v4
