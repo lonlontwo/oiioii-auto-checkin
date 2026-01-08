@@ -44,6 +44,8 @@ jobs:
           OIIOII_COOKIES: ${{ secrets.OIIOII_COOKIES }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          OIIOII_EMAIL: ${{ secrets.OIIOII_EMAIL }}
+          OIIOII_PASSWORD: ${{ secrets.OIIOII_PASSWORD }}
         run: node checkin-cloud.js
         timeout-minutes: 5
       
