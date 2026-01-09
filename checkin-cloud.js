@@ -64,69 +64,67 @@ async function checkin() {
         if (OIIOII_EMAIL && OIIOII_PASSWORD) {
             console.log('🔑 使用帳號密碼登入...');
             await page.goto('https://www.oiioii.ai/login', { waitUntil: 'networkidle2' });
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 3000));
 
-            // 填寫帳號
-            const emailInput = await page.$('input[type="email"], input[type="text"]');
-            if (emailInput) {
-                await emailInput.type(OIIOII_EMAIL, { delay: 50 });
-                console.log('✅ 已填寫帳號');
-            }
-
-            // 填寫密碼
-            const passInput = await page.$('input[type="password"]');
-            if (passInput) {
-                await passInput.type(OIIOII_PASSWORD, { delay: 50 });
-                console.log('✅ 已填寫密碼');
-            }
-
-            // 勾選同意條款
+            // 填寫帳號 (使用 #email 選擇器)
             try {
-                const checkbox = await page.$('input[type="checkbox"]');
-                if (checkbox) {
-                    await checkbox.click();
+                await page.type('#email', OIIOII_EMAIL, { delay: 30 });
+                console.log('✅ 已填寫帳號');
+            } catch (e) {
+                console.log('⚠️ 找不到 #email，嘗試其他選擇器');
+                const emailInput = await page.$('input[type="email"], input[type="text"]');
+                if (emailInput) await emailInput.type(OIIOII_EMAIL, { delay: 30 });
+            }
+
+            // 填寫密碼 (使用 #password 選擇器)
+            try {
+                await page.type('#password', OIIOII_PASSWORD, { delay: 30 });
+                console.log('✅ 已填寫密碼');
+            } catch (e) {
+                console.log('⚠️ 找不到 #password，嘗試其他選擇器');
+                const passInput = await page.$('input[type="password"]');
+                if (passInput) await passInput.type(OIIOII_PASSWORD, { delay: 30 });
+            }
+
+            // 勾選同意條款 (使用 #agreed 選擇器)
+            try {
+                const isChecked = await page.$eval('#agreed', el => el.checked);
+                if (!isChecked) {
+                    await page.click('#agreed');
                     console.log('✅ 已勾選同意條款');
                 }
-            } catch (e) { }
+            } catch (e) {
+                try {
+                    const checkbox = await page.$('input[type="checkbox"]');
+                    if (checkbox) await checkbox.click();
+                } catch (e2) { }
+            }
 
             await new Promise(r => setTimeout(r, 1000));
 
-            // 點擊登入按鈕 (嘗試多種方式)
-            const loginClicked = await page.evaluate(() => {
-                // 方法1: 找含有「登」字的按鈕
-                const buttons = Array.from(document.querySelectorAll('button'));
-                for (let btn of buttons) {
-                    const text = btn.innerText || '';
-                    if (text.includes('登') || text.toLowerCase().includes('login') || text.toLowerCase().includes('sign in')) {
-                        btn.click();
-                        return 'button with login text';
-                    }
-                }
-                // 方法2: 找表單中的提交按鈕
-                const formBtn = document.querySelector('form button[type="submit"], form button:last-child');
-                if (formBtn) {
-                    formBtn.click();
-                    return 'form submit button';
-                }
-                // 方法3: 找粉色/主要按鈕
-                const allBtns = document.querySelectorAll('button');
-                if (allBtns.length > 0) {
-                    allBtns[allBtns.length - 1].click();
-                    return 'last button';
-                }
-                return false;
-            });
+            // 點擊登入按鈕 (使用 button[type="submit"] - 這是表單的提交按鈕)
+            try {
+                await page.click('button[type="submit"]');
+                console.log('✅ 已點擊登入按鈕 (button[type=submit])');
+            } catch (e) {
+                console.log('⚠️ 找不到 submit 按鈕，嘗試其他方式');
+                await page.evaluate(() => {
+                    const formBtn = document.querySelector('form button');
+                    if (formBtn) formBtn.click();
+                });
+            }
 
-            if (loginClicked) {
-                console.log(`✅ 已點擊登入按鈕 (${loginClicked})`);
-                await new Promise(r => setTimeout(r, 5000));
+            // 等待登入完成
+            await new Promise(r => setTimeout(r, 5000));
 
-                // 檢查是否登入成功
-                const currentUrl = page.url();
-                if (!currentUrl.includes('/login')) {
-                    loggedIn = true;
-                    console.log('✅ 登入成功！');
-                }
+            // 檢查是否登入成功
+            const currentUrl = page.url();
+            console.log(`📍 當前網址: ${currentUrl}`);
+            if (!currentUrl.includes('/login')) {
+                loggedIn = true;
+                console.log('✅ 登入成功！');
+            } else {
+                console.log('⚠️ 可能還在登入頁面，繼續嘗試...');
             }
         }
 
