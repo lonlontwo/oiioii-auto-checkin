@@ -1,18 +1,18 @@
 /**
- * OiiOii.ai ?²ç«¯?ªå?ç°½åˆ°?³æœ¬ (çµ‚æ¥µ??- ?¯æ´å¸³å??»å…¥)
+ * OiiOii.ai ?ï¿½ç«¯?ï¿½ï¿½?ç°½åˆ°?ï¿½æœ¬ (çµ‚æ¥µ??- ?ï¿½æ´å¸³ï¿½??ï¿½å…¥)
  */
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
-// Supabase è¨­å?
+// Supabase è¨­ï¿½?
 const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://djmskkwpprhomwmokiwf.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_UUxhIW-g';
 const TABLE_NAME = 'oiioiiä¾¿ç•¶å°ˆå“¡';
 
-// å¸³å?è¨­å?
+// å¸³ï¿½?è¨­ï¿½?
 const OIIOII_EMAIL = process.env.OIIOII_EMAIL;
 const OIIOII_PASSWORD = process.env.OIIOII_PASSWORD;
 
@@ -41,7 +41,7 @@ function getCookiesData() {
 async function checkin() {
     const startTime = new Date();
     const timeStr = startTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
-    console.log(`?? [${timeStr}] ?‹å??·è??ªå?ç°½åˆ°ä»»å?...`);
+    console.log(`?? [${timeStr}] ?ï¿½ï¿½??ï¿½ï¿½??ï¿½ï¿½?ç°½åˆ°ä»»ï¿½?...`);
 
     let browser;
     try {
@@ -59,32 +59,32 @@ async function checkin() {
 
         // ç­–ç•¥ 1: ä½¿ç”¨ Cookies
         if (cookiesData) {
-            console.log('?ª ?—è©¦ä½¿ç”¨ Cookies ?»å…¥...');
+            console.log('?ï¿½ï¿½ ?ï¿½è©¦ä½¿ç”¨ Cookies ?ï¿½å…¥...');
             await page.setCookie(...cookiesData.cookies);
             await page.goto('https://www.oiioii.ai/', { waitUntil: 'networkidle2' });
 
-            // æª¢æŸ¥?¯å¦?Ÿç??»å…¥äº?
+            // æª¢æŸ¥?ï¿½å¦?ï¿½ï¿½??ï¿½å…¥ï¿½?
             const content = await page.content();
             loggedIn = content.includes('Free') || content.includes('Point');
         }
 
-        // ç­–ç•¥ 2: å¦‚æ? Cookies å¤±æ?ä¸”æ??ä?å¸³å?ï¼Œå??·è?å¸³å??»å…¥
+        // ç­–ç•¥ 2: å¦‚ï¿½? Cookies å¤±ï¿½?ä¸”ï¿½??ï¿½ï¿½?å¸³ï¿½?ï¼Œï¿½??ï¿½ï¿½?å¸³ï¿½??ï¿½å…¥
         if (!loggedIn && OIIOII_EMAIL && OIIOII_PASSWORD) {
-            console.log('?? Cookies å¤±æ?ï¼Œå?è©¦å¸³?Ÿå?ç¢¼ç™»??..');
+            console.log('?? Cookies å¤±ï¿½?ï¼Œï¿½?è©¦å¸³?ï¿½ï¿½?ç¢¼ç™»??..');
             await page.goto('https://www.oiioii.ai/login', { waitUntil: 'networkidle2' });
 
-            // å¡«å¯«å¸³è?
+            // å¡«å¯«å¸³ï¿½?
             await page.type('input[type="email"]', OIIOII_EMAIL, { delay: 50 });
             // å¡«å¯«å¯†ç¢¼
             await page.type('input[type="password"]', OIIOII_PASSWORD, { delay: 50 });
 
-            // ?¾é¸?Œæ?æ¢æ¬¾
+            // ?ï¿½é¸?ï¿½ï¿½?æ¢æ¬¾
             try {
                 const checkbox = await page.$('input[type="checkbox"]');
                 if (checkbox) await checkbox.click();
             } catch (e) { }
 
-            // é»žæ??»é?
+            // é»žï¿½??ï¿½ï¿½?
             await Promise.all([
                 page.click('button.ant-btn-primary'),
                 page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => { })
@@ -95,28 +95,28 @@ async function checkin() {
         }
 
         if (!loggedIn) {
-            throw new Error('?»å…¥å¤±æ?ï¼è?æª¢æŸ¥ Cookies ?–å¸³?Ÿå?ç¢¼è¨­å®šã€?);
+            throw new Error('?ï¿½å…¥å¤±ï¿½?ï¼ï¿½?æª¢æŸ¥ Cookies ?ï¿½å¸³?ï¿½ï¿½?ç¢¼è¨­å®šï¿½?);
         }
 
-        console.log('???»å…¥?å?ï¼Œæ??™æ??–é???..');
+        console.log('???ï¿½å…¥?ï¿½ï¿½?ï¼Œï¿½??ï¿½ï¿½??ï¿½ï¿½???..');
         await page.goto('https://www.oiioii.ai/', { waitUntil: 'networkidle2' });
         await new Promise(r => setTimeout(r, 3000));
 
-        // 1. ?“å?ç°½åˆ°?é???
+        // 1. ?ï¿½ï¿½?ç°½åˆ°?ï¿½ï¿½???
         let pointsBefore = await extractPoints(page);
-        console.log(`?? ç°½åˆ°?é??? ${pointsBefore}`);
+        console.log(`?? ç°½åˆ°?ï¿½ï¿½??? ${pointsBefore}`);
 
-        // 2. é»žæ?ç°½åˆ°
+        // 2. é»žï¿½?ç°½åˆ°
         let clicked = await tryClickCheckinButton(page);
         await new Promise(r => setTimeout(r, 5000));
 
-        // 3. ?“å?ç°½åˆ°å¾Œé???
+        // 3. ?ï¿½ï¿½?ç°½åˆ°å¾Œï¿½???
         let pointsAfter = await extractPoints(page);
-        console.log(`?? ç°½åˆ°å¾Œé??? ${pointsAfter}`);
+        console.log(`?? ç°½åˆ°å¾Œï¿½??? ${pointsAfter}`);
 
         let earned = pointsAfter > pointsBefore ? (pointsAfter - pointsBefore) : (clicked ? 300 : 0);
 
-        // 4. ?´æ–° Supabase
+        // 4. ?ï¿½æ–° Supabase
         const client = getSupabase();
         const { data: currentData } = await client.from(TABLE_NAME).select('*').eq('id', 1).single();
 
@@ -135,10 +135,10 @@ async function checkin() {
         };
 
         await client.from(TABLE_NAME).upsert(updateData);
-        console.log(`?? ä»»å?å®Œæ?ï¼ç²å¾—é??? ${earned}`);
+        console.log(`?? ä»»ï¿½?å®Œï¿½?ï¼ç²å¾—ï¿½??? ${earned}`);
 
     } catch (error) {
-        console.error(`???·è??ºéŒ¯: ${error.message}`);
+        console.error(`???ï¿½ï¿½??ï¿½éŒ¯: ${error.message}`);
     } finally {
         if (browser) await browser.close();
     }
@@ -146,7 +146,7 @@ async function checkin() {
 
 async function extractPoints(page) {
     return await page.evaluate(() => {
-        // ?¹æ? 1: å°‹æ‰¾å°Žè¦½?—ä¸­?„æ•¸å­?
+        // ?ï¿½ï¿½? 1: å°‹æ‰¾å°Žè¦½?ï¿½ä¸­?ï¿½æ•¸ï¿½?
         const navItems = Array.from(document.querySelectorAll('nav *, .ant-layout-header *'));
         for (let el of navItems) {
             const text = el.innerText?.trim();
@@ -155,12 +155,12 @@ async function extractPoints(page) {
             }
         }
 
-        // ?¹æ? 2: ?¨å??œå???"Points" ?‡å??„é„°è¿‘æ•¸å­?
+        // ?ï¿½ï¿½? 2: ?ï¿½ï¿½??ï¿½ï¿½???"Points" ?ï¿½ï¿½??ï¿½é„°è¿‘æ•¸ï¿½?
         const bodyText = document.body.innerText;
         const pointMatch = bodyText.match(/(\d[\d,]*)\s*Points/i);
         if (pointMatch) return parseInt(pointMatch[1].replace(/,/g, ''));
 
-        // ?¹æ? 3: å°‹æ‰¾?³ä?è§’ç‰¹å®šå???
+        // ?ï¿½ï¿½? 3: å°‹æ‰¾?ï¿½ï¿½?è§’ç‰¹å®šï¿½???
         const possiblePoints = Array.from(document.querySelectorAll('*'))
             .filter(el => {
                 const rect = el.getBoundingClientRect();
@@ -180,7 +180,7 @@ async function extractPoints(page) {
 
 async function tryClickCheckinButton(page) {
     let clicked = false;
-    const targets = ['Free', 'Points', '?˜å?', 'ç°½åˆ°'];
+    const targets = ['Free', 'Points', '?ï¿½ï¿½?', 'ç°½åˆ°'];
     for (let t of targets) {
         const btns = await page.$$('button, a, div[role="button"]');
         for (let btn of btns) {

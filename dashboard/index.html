@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OiiOii ?˜ä¾¿?¶å??€</title>
+    <title>OiiOii ?ï¿½ä¾¿?ï¿½ï¿½??ï¿½</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -308,65 +308,65 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>?? OiiOii ?˜ä¾¿?¶å??€</h1>
-            <p>?ªå?ç°½åˆ°ç³»çµ±?€?‹ç›£??/p>
+            <h1>?? OiiOii ?ï¿½ä¾¿?ï¿½ï¿½??ï¿½</h1>
+            <p>?ï¿½ï¿½?ç°½åˆ°ç³»çµ±?ï¿½?ï¿½ç›£??/p>
             <div class="realtime-indicator" style="margin-top: 10px;">
                 <span class="realtime-dot"></span>
-                <span>?³æ??´æ–°</span>
+                <span>?ï¿½ï¿½??ï¿½æ–°</span>
             </div>
         </div>
 
         <div class="status-card">
             <div class="status-header">
-                <span class="status-title">?? é»æ•¸?€??/span>
-                <span class="status-badge success" id="statusBadge">è¼‰å…¥ä¸?..</span>
+                <span class="status-title">?? é»æ•¸?ï¿½??/span>
+                <span class="status-badge success" id="statusBadge">è¼‰å…¥ï¿½?..</span>
             </div>
 
             <div class="points-grid">
                 <div class="points-box current">
-                    <div class="points-label">?¶å?é»æ•¸</div>
+                    <div class="points-label">?ï¿½ï¿½?é»æ•¸</div>
                     <div>
                         <span class="points-value" id="currentPoints">--</span>
-                        <span class="points-unit">é»?/span>
+                        <span class="points-unit">ï¿½?/span>
                     </div>
                 </div>
                 <div class="points-box earned">
-                    <div class="points-label">å·²å?å¾—é???/div>
+                    <div class="points-label">å·²ï¿½?å¾—ï¿½???/div>
                     <div>
                         <span class="points-value" id="earnedPoints">--</span>
-                        <span class="points-unit">é»?/span>
+                        <span class="points-unit">ï¿½?/span>
                     </div>
                 </div>
             </div>
 
             <div style="text-align: center; margin-top: 20px;">
-                <a href="https://www.oiioii.ai/" target="_blank" class="link-btn">?? ?å? OiiOii.ai</a>
+                <a href="https://www.oiioii.ai/" target="_blank" class="link-btn">?? ?ï¿½ï¿½? OiiOii.ai</a>
                 <a href="https://github.com/lonlontwo/oiioii-auto-checkin/actions" target="_blank" class="link-btn">??
-                    ?¥ç??·è?è¨˜é?</a>
+                    ?ï¿½ï¿½??ï¿½ï¿½?è¨˜ï¿½?</a>
             </div>
         </div>
 
         <div class="history-card">
-            <div class="history-title">?? ç°½åˆ°è¨˜é?</div>
+            <div class="history-title">?? ç°½åˆ°è¨˜ï¿½?</div>
             <div class="history-list" id="historyList">
                 <div class="loading">
                     <div class="loading-spinner"></div>
-                    <p style="margin-top: 15px;">è¼‰å…¥ä¸?..</p>
+                    <p style="margin-top: 15px;">è¼‰å…¥ï¿½?..</p>
                 </div>
             </div>
         </div>
 
-        <button class="refresh-btn" onclick="loadData()">?? ?æ–°?´ç?</button>
-        <div class="last-update" id="lastUpdate">?€å¾Œæ›´?°ï?--</div>
+        <button class="refresh-btn" onclick="loadData()">?? ?ï¿½æ–°?ï¿½ï¿½?</button>
+        <div class="last-update" id="lastUpdate">?ï¿½å¾Œæ›´?ï¿½ï¿½?--</div>
     </div>
 
     <script>
-        // Supabase è¨­å?
+        // Supabase è¨­ï¿½?
         const SUPABASE_URL = 'https://djmskkwpprhomwmokiwf.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_UUxhIW-g';
         const TABLE_NAME = 'oiioiiä¾¿ç•¶å°ˆå“¡';
 
-        // ?å???Supabase
+        // ?ï¿½ï¿½???Supabase
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function loadData() {
@@ -381,33 +381,33 @@
 
                 updateUI(data);
             } catch (error) {
-                console.error('è¼‰å…¥å¤±æ?:', error);
-                document.getElementById('statusBadge').textContent = '??è¼‰å…¥å¤±æ?';
+                console.error('è¼‰å…¥å¤±ï¿½?:', error);
+                document.getElementById('statusBadge').textContent = '??è¼‰å…¥å¤±ï¿½?';
                 document.getElementById('statusBadge').className = 'status-badge error';
             }
         }
 
         function updateUI(data) {
-            // ?´æ–°é»æ•¸
+            // ?ï¿½æ–°é»æ•¸
             document.getElementById('currentPoints').textContent =
                 (data.current_points || 0).toLocaleString();
             document.getElementById('earnedPoints').textContent =
                 (data.earned_points || 0).toLocaleString();
 
-            // ?´æ–°?€??
+            // ?ï¿½æ–°?ï¿½??
             const badge = document.getElementById('statusBadge');
             if (data.status === 'success') {
-                badge.textContent = '???‹è?ä¸?;
+                badge.textContent = '???ï¿½ï¿½?ï¿½?;
                 badge.className = 'status-badge success';
             } else if (data.status === 'error') {
-                badge.textContent = '???°å¸¸';
+                badge.textContent = '???ï¿½å¸¸';
                 badge.className = 'status-badge error';
             } else {
-                badge.textContent = '??ç­‰å?ä¸?;
+                badge.textContent = '??ç­‰ï¿½?ï¿½?;
                 badge.className = 'status-badge pending';
             }
 
-            // ?´æ–°æ­·å²è¨˜é?
+            // ?ï¿½æ–°æ­·å²è¨˜ï¿½?
             const historyList = document.getElementById('historyList');
             const history = data.history || [];
 
@@ -417,27 +417,27 @@
                         <span class="history-time">${item.time || '--'}</span>
                         <span class="history-points">${item.points || '+0'}</span>
                         <span class="history-status ${item.status === 'success' ? 'success' : 'failed'}">
-                            ${item.status === 'success' ? '?å?' : 'å¤±æ?'}
+                            ${item.status === 'success' ? '?ï¿½ï¿½?' : 'å¤±ï¿½?'}
                         </span>
                     </div>
                 `).join('');
             } else {
-                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">å°šç„¡ç°½åˆ°è¨˜é?</p>';
+                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">å°šç„¡ç°½åˆ°è¨˜ï¿½?</p>';
             }
 
-            // ?´æ–°?‚é?
+            // ?ï¿½æ–°?ï¿½ï¿½?
             document.getElementById('lastUpdate').textContent =
-                '?€å¾Œæ›´?°ï?' + new Date().toLocaleString('zh-TW');
+                '?ï¿½å¾Œæ›´?ï¿½ï¿½?' + new Date().toLocaleString('zh-TW');
         }
 
-        // è¨­ç½®?³æ?è¨‚é–±
+        // è¨­ç½®?ï¿½ï¿½?è¨‚é–±
         function setupRealtimeSubscription() {
             supabase
                 .channel('checkin-changes')
                 .on('postgres_changes',
                     { event: '*', schema: 'public', table: TABLE_NAME },
                     (payload) => {
-                        console.log('?¶åˆ°?³æ??´æ–°:', payload);
+                        console.log('?ï¿½åˆ°?ï¿½ï¿½??ï¿½æ–°:', payload);
                         if (payload.new) {
                             updateUI(payload.new);
                         }
@@ -446,11 +446,11 @@
                 .subscribe();
         }
 
-        // ?å?è¼‰å…¥
+        // ?ï¿½ï¿½?è¼‰å…¥
         loadData();
         setupRealtimeSubscription();
 
-        // æ¯?30 ç§’è‡ª?•æ›´?°ï??™ç”¨ï¼?
+        // ï¿½?30 ç§’è‡ª?ï¿½æ›´?ï¿½ï¿½??ï¿½ç”¨ï¿½?
         setInterval(loadData, 30 * 1000);
     </script>
 </body>

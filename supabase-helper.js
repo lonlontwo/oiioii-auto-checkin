@@ -1,24 +1,24 @@
 /**
- * Supabase ?¸æ??ä?æ¨¡ç?
- * è®€å¯?OiiOii ä¾¿ç•¶å°ˆå“¡?„ç°½?°æ•¸??
+ * Supabase ?ï¿½ï¿½??ï¿½ï¿½?æ¨¡ï¿½?
+ * è®€ï¿½?OiiOii ä¾¿ç•¶å°ˆå“¡?ï¿½ç°½?ï¿½æ•¸??
  */
 
 const { createClient } = require('@supabase/supabase-js');
 const { SUPABASE_URL, SUPABASE_KEY, TABLE_NAME } = require('./supabase-config');
 
-// ?å???Supabase å®¢æˆ¶ç«?
+// ?ï¿½ï¿½???Supabase å®¢æˆ¶ï¿½?
 let supabase = null;
 
 function getSupabase() {
     if (!supabase) {
         supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('?”¥ Supabase å·²å?å§‹å?');
+        console.log('?ï¿½ï¿½ Supabase å·²ï¿½?å§‹ï¿½?');
     }
     return supabase;
 }
 
 /**
- * è®€?–ç°½?°æ•¸??
+ * è®€?ï¿½ç°½?ï¿½æ•¸??
  */
 async function loadCheckinData() {
     try {
@@ -31,8 +31,8 @@ async function loadCheckinData() {
 
         if (error) {
             if (error.code === 'PGRST116') {
-                // è³‡æ?ä¸å??¨ï??µå»º?å?è³‡æ?
-                console.log('?? Supabase ä¸­æ??‰æ•¸?šï??µå»º?å?è³‡æ?...');
+                // è³‡ï¿½?ä¸ï¿½??ï¿½ï¿½??ï¿½å»º?ï¿½ï¿½?è³‡ï¿½?
+                console.log('?? Supabase ä¸­ï¿½??ï¿½æ•¸?ï¿½ï¿½??ï¿½å»º?ï¿½ï¿½?è³‡ï¿½?...');
                 const defaultData = getDefaultData();
                 await saveCheckinData(defaultData);
                 return defaultData;
@@ -40,24 +40,24 @@ async function loadCheckinData() {
             throw error;
         }
 
-        console.log('?? å¾?Supabase è®€?–æ•¸?šæ???);
+        console.log('?? ï¿½?Supabase è®€?ï¿½æ•¸?ï¿½ï¿½???);
         return data;
     } catch (error) {
-        console.error('??Supabase è®€?–å¤±??', error.message);
+        console.error('??Supabase è®€?ï¿½å¤±??', error.message);
         return getDefaultData();
     }
 }
 
 /**
- * ä¿å?ç°½åˆ°?¸æ?
+ * ä¿ï¿½?ç°½åˆ°?ï¿½ï¿½?
  */
 async function saveCheckinData(data) {
     try {
         const client = getSupabase();
 
-        // æ·»å??´æ–°?‚é?
+        // æ·»ï¿½??ï¿½æ–°?ï¿½ï¿½?
         data.updated_at = new Date().toISOString();
-        data.id = 1; // ?ºå? ID
+        data.id = 1; // ?ï¿½ï¿½? ID
 
         const { error } = await client
             .from(TABLE_NAME)
@@ -65,16 +65,16 @@ async function saveCheckinData(data) {
 
         if (error) throw error;
 
-        console.log('?’¾ ?¸æ?å·²ä?å­˜åˆ° Supabase');
+        console.log('?ï¿½ï¿½ ?ï¿½ï¿½?å·²ï¿½?å­˜åˆ° Supabase');
         return true;
     } catch (error) {
-        console.error('??Supabase ä¿å?å¤±æ?:', error.message);
+        console.error('??Supabase ä¿ï¿½?å¤±ï¿½?:', error.message);
         return false;
     }
 }
 
 /**
- * ?´æ–°é»žæ•¸?Œæ·»? è???
+ * ?ï¿½æ–°é»žæ•¸?ï¿½æ·»?ï¿½ï¿½???
  */
 async function updateCheckinResult(currentPoints, earnedThisTime, status) {
     try {
@@ -82,13 +82,13 @@ async function updateCheckinResult(currentPoints, earnedThisTime, status) {
 
         const timeStr = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
 
-        // ?´æ–°?¸æ?
+        // ?ï¿½æ–°?ï¿½ï¿½?
         data.current_points = currentPoints;
         data.earned_points = (data.earned_points || 0) + earnedThisTime;
         data.last_checkin = new Date().toISOString();
         data.status = status;
 
-        // æ·»å?æ­·å²è¨˜é?
+        // æ·»ï¿½?æ­·å²è¨˜ï¿½?
         const newRecord = {
             time: timeStr,
             points: earnedThisTime > 0 ? `+${earnedThisTime}` : '+0',
@@ -99,10 +99,10 @@ async function updateCheckinResult(currentPoints, earnedThisTime, status) {
 
         await saveCheckinData(data);
 
-        console.log(`?? é»žæ•¸å·²æ›´?? ?¶å? ${currentPoints}, ç´¯è??²å? ${data.earned_points}`);
+        console.log(`?? é»žæ•¸å·²æ›´?? ?ï¿½ï¿½? ${currentPoints}, ç´¯ï¿½??ï¿½ï¿½? ${data.earned_points}`);
         return true;
     } catch (error) {
-        console.error('???´æ–°é»žæ•¸å¤±æ?:', error.message);
+        console.error('???ï¿½æ–°é»žæ•¸å¤±ï¿½?:', error.message);
         return false;
     }
 }
