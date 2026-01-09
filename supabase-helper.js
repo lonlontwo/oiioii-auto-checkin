@@ -1,24 +1,24 @@
 /**
- * Supabase 數據操作模組
- * 讀寫 OiiOii 便當專員的簽到數據
+ * Supabase ?��??��?模�?
+ * 讀�?OiiOii 便當專員?�簽?�數??
  */
 
 const { createClient } = require('@supabase/supabase-js');
 const { SUPABASE_URL, SUPABASE_KEY, TABLE_NAME } = require('./supabase-config');
 
-// 初始化 Supabase 客戶端
+// ?��???Supabase 客戶�?
 let supabase = null;
 
 function getSupabase() {
     if (!supabase) {
         supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('🔥 Supabase 已初始化');
+        console.log('?�� Supabase 已�?始�?');
     }
     return supabase;
 }
 
 /**
- * 讀取簽到數據
+ * 讀?�簽?�數??
  */
 async function loadCheckinData() {
     try {
@@ -31,8 +31,8 @@ async function loadCheckinData() {
 
         if (error) {
             if (error.code === 'PGRST116') {
-                // 資料不存在，創建初始資料
-                console.log('📖 Supabase 中沒有數據，創建初始資料...');
+                // 資�?不�??��??�建?��?資�?
+                console.log('?? Supabase 中�??�數?��??�建?��?資�?...');
                 const defaultData = getDefaultData();
                 await saveCheckinData(defaultData);
                 return defaultData;
@@ -40,24 +40,24 @@ async function loadCheckinData() {
             throw error;
         }
 
-        console.log('📖 從 Supabase 讀取數據成功');
+        console.log('?? �?Supabase 讀?�數?��???);
         return data;
     } catch (error) {
-        console.error('❌ Supabase 讀取失敗:', error.message);
+        console.error('??Supabase 讀?�失??', error.message);
         return getDefaultData();
     }
 }
 
 /**
- * 保存簽到數據
+ * 保�?簽到?��?
  */
 async function saveCheckinData(data) {
     try {
         const client = getSupabase();
 
-        // 添加更新時間
+        // 添�??�新?��?
         data.updated_at = new Date().toISOString();
-        data.id = 1; // 固定 ID
+        data.id = 1; // ?��? ID
 
         const { error } = await client
             .from(TABLE_NAME)
@@ -65,16 +65,16 @@ async function saveCheckinData(data) {
 
         if (error) throw error;
 
-        console.log('💾 數據已保存到 Supabase');
+        console.log('?�� ?��?已�?存到 Supabase');
         return true;
     } catch (error) {
-        console.error('❌ Supabase 保存失敗:', error.message);
+        console.error('??Supabase 保�?失�?:', error.message);
         return false;
     }
 }
 
 /**
- * 更新點數和添加記錄
+ * ?�新點數?�添?��???
  */
 async function updateCheckinResult(currentPoints, earnedThisTime, status) {
     try {
@@ -82,13 +82,13 @@ async function updateCheckinResult(currentPoints, earnedThisTime, status) {
 
         const timeStr = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
 
-        // 更新數據
+        // ?�新?��?
         data.current_points = currentPoints;
         data.earned_points = (data.earned_points || 0) + earnedThisTime;
         data.last_checkin = new Date().toISOString();
         data.status = status;
 
-        // 添加歷史記錄
+        // 添�?歷史記�?
         const newRecord = {
             time: timeStr,
             points: earnedThisTime > 0 ? `+${earnedThisTime}` : '+0',
@@ -99,10 +99,10 @@ async function updateCheckinResult(currentPoints, earnedThisTime, status) {
 
         await saveCheckinData(data);
 
-        console.log(`📊 點數已更新: 當前 ${currentPoints}, 累計獲得 ${data.earned_points}`);
+        console.log(`?? 點數已更?? ?��? ${currentPoints}, 累�??��? ${data.earned_points}`);
         return true;
     } catch (error) {
-        console.error('❌ 更新點數失敗:', error.message);
+        console.error('???�新點數失�?:', error.message);
         return false;
     }
 }
