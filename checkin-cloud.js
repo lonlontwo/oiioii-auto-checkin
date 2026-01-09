@@ -223,33 +223,40 @@ async function checkin() {
 
 async function extractPoints(page) {
     return await page.evaluate(() => {
-        // 方法 1: 尋找導覽列中的數字
-        const navItems = Array.from(document.querySelectorAll('nav *, header *, [class*="header"] *'));
-        for (let el of navItems) {
-            const text = el.innerText?.trim();
-            if (text && /^\d[\d,]*$/.test(text) && text.length < 8) {
-                return parseInt(text.replace(/,/g, ''));
+        // 方法 1: OiiOii 網站的專用選擇器 (登入後顯示的點數)
+        const creditAmount = document.querySelector('[class*="credit-amount"]');
+        if (creditAmount) {
+            const text = creditAmount.innerText?.trim();
+            if (text && /^\d+$/.test(text)) {
+                return parseInt(text);
             }
         }
 
-        // 方法 2: 全域搜尋有 "Points" 文字的鄰近數字
-        const bodyText = document.body.innerText;
-        const pointMatch = bodyText.match(/(\d[\d,]*)\s*Points/i);
-        if (pointMatch) return parseInt(pointMatch[1].replace(/,/g, ''));
+        // 方法 2: 尋找 credit-balance 選擇器
+        const creditBalance = document.querySelector('[class*="credit-balance"]');
+        if (creditBalance) {
+            const match = creditBalance.innerText?.match(/(\d+)/);
+            if (match) return parseInt(match[1]);
+        }
 
-        // 方法 3: 尋找右上角特定區域
-        const possiblePoints = Array.from(document.querySelectorAll('*'))
-            .filter(el => {
+        // 方法 3: 尋找「盒飯」或「Points」相關的數字
+        const allElements = Array.from(document.querySelectorAll('*'));
+        for (let el of allElements) {
+            const text = el.innerText?.trim();
+            // 找純數字且在合理範圍內 (1-99999)
+            if (text && /^\d+$/.test(text) && text.length < 6 && parseInt(text) > 0) {
                 const rect = el.getBoundingClientRect();
-                return rect.top < 100 && rect.right > window.innerWidth * 0.7;
-            });
-
-        for (let el of possiblePoints) {
-            const text = el.innerText?.trim();
-            if (text && /^\d[\d,]*$/.test(text) && text.length < 8) {
-                return parseInt(text.replace(/,/g, ''));
+                // 確保在頁面上方 (頭部區域)
+                if (rect.top < 150 && rect.right > window.innerWidth * 0.5) {
+                    return parseInt(text);
+                }
             }
         }
+
+        // 方法 4: 搜尋頁面文字中的數字
+        const bodyText = document.body.innerText;
+        const pointMatch = bodyText.match(/(\d+)\s*(盒飯|Points|積分)/i);
+        if (pointMatch) return parseInt(pointMatch[1]);
 
         return 0;
     });
@@ -257,14 +264,16 @@ async function extractPoints(page) {
 
 async function tryClickCheckinButton(page) {
     return await page.evaluate(() => {
-        const targets = ['Free', 'Points', '領取', '簽到', '免費', 'Claim', 'Daily'];
-        const elements = Array.from(document.querySelectorAll('button, a, div[role="button"], span'));
+        // OiiOii 網站的簽到按鈕關鍵字
+        const targets = ['赚盒饭', 'Earn Bento', 'Free', 'Points', '領取', '簽到', '免費', 'Claim', 'Daily', '盒飯', 'Credit'];
+        const elements = Array.from(document.querySelectorAll('button, a, div[role="button"], span, [class*="credit"]'));
 
         for (let target of targets) {
             for (let el of elements) {
                 const text = el.innerText || '';
                 if (text.includes(target)) {
                     el.click();
+                    console.log('Clicked element with text:', text.substring(0, 30));
                     return true;
                 }
             }
