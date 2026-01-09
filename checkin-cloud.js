@@ -248,40 +248,70 @@ async function checkin() {
 
 async function extractPoints(page) {
     return await page.evaluate(() => {
-        // 方法 1: OiiOii 網站的專用選擇器 (登入後顯示的點數)
-        const creditAmount = document.querySelector('[class*="credit-amount"]');
-        if (creditAmount) {
-            const text = creditAmount.innerText?.trim();
-            if (text && /^\d+$/.test(text)) {
+        // 方法 1: 找到包含 counter-number 的父容器，把所有數字組合起來
+        const counterNumbers = document.querySelectorAll('[class*="counter-number"]');
+        if (counterNumbers.length > 0) {
+            // 找到這些元素共同的父容器
+            const parent = counterNumbers[0].parentElement?.parentElement;
+            if (parent) {
+                // 取得父容器的純數字文字（過濾掉非數字字符）
+                const allText = parent.innerText?.replace(/[^\d]/g, '');
+                if (allText && allText.length > 2) {
+                    console.log('Found counter parent text:', allText);
+                    return parseInt(allText);
+                }
+            }
+
+            // 如果父容器方法失敗，嘗試組合所有 counter-number 的數字
+            let combined = '';
+            counterNumbers.forEach(el => {
+                const digit = el.innerText?.trim();
+                if (digit && /^\d$/.test(digit)) {
+                    combined += digit;
+                }
+            });
+            if (combined.length > 2) {
+                console.log('Combined counter numbers:', combined);
+                return parseInt(combined);
+            }
+        }
+
+        // 方法 2: 找包含 credit 關鍵字的容器
+        const creditContainers = document.querySelectorAll('[class*="credit"]');
+        for (let container of creditContainers) {
+            const text = container.innerText?.replace(/[^\d]/g, '');
+            if (text && text.length >= 3 && parseInt(text) > 100) {
+                console.log('Found credit container text:', text);
                 return parseInt(text);
             }
         }
 
-        // 方法 2: 尋找 credit-balance 選擇器
-        const creditBalance = document.querySelector('[class*="credit-balance"]');
-        if (creditBalance) {
-            const match = creditBalance.innerText?.match(/(\d+)/);
-            if (match) return parseInt(match[1]);
-        }
-
-        // 方法 3: 尋找「盒飯」或「Points」相關的數字
+        // 方法 3: 在頁面頂部找多位數的數字
         const allElements = Array.from(document.querySelectorAll('*'));
         for (let el of allElements) {
-            const text = el.innerText?.trim();
-            // 找純數字且在合理範圍內 (1-99999)
-            if (text && /^\d+$/.test(text) && text.length < 6 && parseInt(text) > 0) {
-                const rect = el.getBoundingClientRect();
-                // 確保在頁面上方 (頭部區域)
-                if (rect.top < 150 && rect.right > window.innerWidth * 0.5) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < 100 && rect.right > window.innerWidth * 0.6) {
+                const text = el.innerText?.trim();
+                // 找 3 位以上的純數字
+                if (text && /^\d{3,}$/.test(text)) {
+                    console.log('Found number in header:', text);
                     return parseInt(text);
                 }
             }
         }
 
-        // 方法 4: 搜尋頁面文字中的數字
+        // 方法 4: 搜尋整個頁面的大數字
         const bodyText = document.body.innerText;
-        const pointMatch = bodyText.match(/(\d+)\s*(盒飯|Points|積分)/i);
-        if (pointMatch) return parseInt(pointMatch[1]);
+        const matches = bodyText.match(/\b(\d{3,5})\b/g);
+        if (matches) {
+            // 找最大的合理數字（可能是點數）
+            const numbers = matches.map(m => parseInt(m)).filter(n => n > 100 && n < 100000);
+            if (numbers.length > 0) {
+                const largest = Math.max(...numbers);
+                console.log('Found largest number in page:', largest);
+                return largest;
+            }
+        }
 
         return 0;
     });
