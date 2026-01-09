@@ -157,8 +157,19 @@ async function checkin() {
 
         // 前往首頁準備簽到
         console.log('📍 前往首頁...');
-        await page.goto('https://www.oiioii.ai/', { waitUntil: 'networkidle2' });
-        await new Promise(r => setTimeout(r, 3000));
+        await page.goto('https://www.oiioii.ai/home', { waitUntil: 'networkidle2' });
+
+        // 等待更長時間讓動畫計數器載入完成
+        console.log('⏳ 等待頁面完全載入...');
+        await new Promise(r => setTimeout(r, 8000));
+
+        // 嘗試等待 counter-number 元素出現
+        try {
+            await page.waitForSelector('[class*="counter-number"]', { timeout: 5000 });
+            console.log('✅ 找到 counter-number 元素');
+        } catch (e) {
+            console.log('⚠️ 未找到 counter-number 元素，繼續執行...');
+        }
 
         // 截圖 (用於診斷)
         try {
@@ -248,35 +259,46 @@ async function checkin() {
 
 async function extractPoints(page) {
     return await page.evaluate(() => {
-        // 方法 1: 找到包含 counter-number 的父容器，把所有數字組合起來
-        const counterNumbers = document.querySelectorAll('[class*="counter-number"]');
-        if (counterNumbers.length > 0) {
-            // 找到這些元素共同的父容器
-            const parent = counterNumbers[0].parentElement?.parentElement;
-            if (parent) {
-                // 取得父容器的純數字文字（過濾掉非數字字符）
-                const allText = parent.innerText?.replace(/[^\d]/g, '');
-                if (allText && allText.length > 2) {
-                    console.log('Found counter parent text:', allText);
-                    return parseInt(allText);
-                }
-            }
+        // 方法 1: 找到包含 counter-number 的元素，只取頭部區域的（右上角）
+        const allCounterNumbers = document.querySelectorAll('[class*="counter-number"]');
+        console.log('Total counter-number elements found:', allCounterNumbers.length);
 
-            // 如果父容器方法失敗，嘗試組合所有 counter-number 的數字
+        // 過濾出右上角區域的數字元素 (top < 100, right > 800)
+        const headerCounters = Array.from(allCounterNumbers).filter(el => {
+            const rect = el.getBoundingClientRect();
+            return rect.top < 100 && rect.right > window.innerWidth * 0.6;
+        });
+        console.log('Header counter elements:', headerCounters.length);
+
+        if (headerCounters.length > 0) {
+            // 組合這些數字
             let combined = '';
-            counterNumbers.forEach(el => {
+            headerCounters.forEach(el => {
                 const digit = el.innerText?.trim();
                 if (digit && /^\d$/.test(digit)) {
                     combined += digit;
                 }
             });
-            if (combined.length > 2) {
-                console.log('Combined counter numbers:', combined);
+            console.log('Combined header digits:', combined);
+            if (combined.length >= 2 && parseInt(combined) > 100) {
                 return parseInt(combined);
             }
         }
 
-        // 方法 2: 找包含 credit 關鍵字的容器
+        // 方法 2: 找「盒饭」文字旁邊的數字
+        const allElements = Array.from(document.querySelectorAll('*'));
+        for (let el of allElements) {
+            if (el.innerText?.includes('盒饭') || el.innerText?.includes('盒飯')) {
+                // 找這個元素或其父元素中的數字
+                const text = el.innerText.replace(/[^\d]/g, '');
+                if (text.length >= 2 && parseInt(text) > 100) {
+                    console.log('Found number near 盒饭:', text);
+                    return parseInt(text);
+                }
+            }
+        }
+
+        // 方法 3: 找包含 credit 關鍵字的容器
         const creditContainers = document.querySelectorAll('[class*="credit"]');
         for (let container of creditContainers) {
             const text = container.innerText?.replace(/[^\d]/g, '');
@@ -286,9 +308,9 @@ async function extractPoints(page) {
             }
         }
 
-        // 方法 3: 在頁面頂部找多位數的數字
-        const allElements = Array.from(document.querySelectorAll('*'));
-        for (let el of allElements) {
+        // 方法 4: 在頁面頂部找多位數的數字
+        const headerElements = Array.from(document.querySelectorAll('*'));
+        for (let el of headerElements) {
             const rect = el.getBoundingClientRect();
             if (rect.top < 100 && rect.right > window.innerWidth * 0.6) {
                 const text = el.innerText?.trim();
