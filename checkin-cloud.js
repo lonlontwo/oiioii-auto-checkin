@@ -166,6 +166,31 @@ async function checkin() {
             console.log('📸 已截圖 screenshot-before.png');
         } catch (e) { }
 
+        // 除錯：列出頁面頭部區域所有的數字
+        const debugNumbers = await page.evaluate(() => {
+            const results = [];
+            document.querySelectorAll('*').forEach(el => {
+                const text = el.innerText?.trim();
+                if (text && /^\d+$/.test(text)) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < 200) {  // 只看頁面頂部 200px 內
+                        results.push({
+                            text: text,
+                            tag: el.tagName,
+                            class: el.className?.substring?.(0, 50) || '',
+                            top: Math.round(rect.top),
+                            right: Math.round(rect.right)
+                        });
+                    }
+                }
+            });
+            return results;
+        });
+        console.log('🔍 頁面頂部找到的數字元素:');
+        debugNumbers.forEach((item, i) => {
+            console.log(`   ${i + 1}. "${item.text}" - ${item.tag} class="${item.class}" (top:${item.top}, right:${item.right})`);
+        });
+
         // 1. 抓取簽到前點數
         let pointsBefore = await extractPoints(page);
         console.log(`📊 簽到前點數: ${pointsBefore}`);
