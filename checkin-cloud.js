@@ -63,8 +63,22 @@ async function checkin() {
         // 策略 1: 使用帳密登入 (優先)
         if (OIIOII_EMAIL && OIIOII_PASSWORD) {
             console.log('🔑 使用帳號密碼登入...');
+            console.log(`📧 帳號: ${OIIOII_EMAIL.substring(0, 3)}****`);
             await page.goto('https://www.oiioii.ai/login', { waitUntil: 'networkidle2' });
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise(r => setTimeout(r, 5000)); // 等待更久
+
+            // 先截圖看登入頁面狀態
+            try {
+                await page.screenshot({ path: 'screenshot-login-page.png', fullPage: false });
+                console.log('📸 已截圖登入頁面');
+            } catch (e) { }
+
+            // 檢查頁面內容
+            const pageContent = await page.content();
+            console.log(`📄 頁面是否包含 email 輸入框: ${pageContent.includes('id="email"')}`);
+            console.log(`📄 頁面是否包含 password 輸入框: ${pageContent.includes('id="password"')}`);
+            console.log(`📄 頁面是否包含 submit 按鈕: ${pageContent.includes('type="submit"')}`);
+
 
             // 填寫帳號 (使用 #email 選擇器)
             try {

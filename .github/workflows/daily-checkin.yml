@@ -63,6 +63,7 @@ jobs:
         with:
           name: screenshots-${{ github.run_number }}
           path: |
+            screenshot-login-page.png
             screenshot-before.png
             screenshot-after.png
           if-no-files-found: ignore
