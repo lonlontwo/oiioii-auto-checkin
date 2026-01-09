@@ -1,18 +1,18 @@
 /**
- * OiiOii.ai ?�端?��?簽到?�本 (終極??- ?�援帳�??�入)
+ * OiiOii.ai 雲端自動簽到腳本 (終極版 - 支援帳密登入)
  */
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
-// Supabase 設�?
+// Supabase 設定
 const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://djmskkwpprhomwmokiwf.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_JUxhlWr9';
 const TABLE_NAME = 'oiioii便當專員';
 
-// 帳�?設�?
+// 帳密設定
 const OIIOII_EMAIL = process.env.OIIOII_EMAIL;
 const OIIOII_PASSWORD = process.env.OIIOII_PASSWORD;
 
@@ -25,14 +25,18 @@ function getSupabase() {
     return supabase;
 }
 
-// 讀??Cookies Data
+// 讀取 Cookies Data
 function getCookiesData() {
     if (process.env.OIIOII_COOKIES) {
         try {
             const decoded = Buffer.from(process.env.OIIOII_COOKIES, 'base64').toString('utf8');
             return JSON.parse(decoded);
         } catch (e) {
-            return JSON.parse(process.env.OIIOII_COOKIES);
+            try {
+                return JSON.parse(process.env.OIIOII_COOKIES);
+            } catch (e2) {
+                return null;
+            }
         }
     }
     return null;
@@ -41,7 +45,7 @@ function getCookiesData() {
 async function checkin() {
     const startTime = new Date();
     const timeStr = startTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
-    console.log(`?? [${timeStr}] ?��??��??��?簽到任�?...`);
+    console.log(`🚀 [${timeStr}] 開始執行自動簽到任務...`);
 
     let browser;
     try {
@@ -54,91 +58,152 @@ async function checkin() {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
         await page.setViewport({ width: 1280, height: 800 });
 
-        const cookiesData = getCookiesData();
         let loggedIn = false;
 
-        // 策略 1: 使用 Cookies
-        if (cookiesData) {
-            console.log('?�� ?�試使用 Cookies ?�入...');
-            await page.setCookie(...cookiesData.cookies);
-            await page.goto('https://www.oiioii.ai/', { waitUntil: 'networkidle2' });
-
-            // 檢查?�否?��??�入�?
-            const content = await page.content();
-            loggedIn = content.includes('Free') || content.includes('Point');
-        }
-
-        // 策略 2: 如�? Cookies 失�?且�??��?帳�?，�??��?帳�??�入
-        if (!loggedIn && OIIOII_EMAIL && OIIOII_PASSWORD) {
-            console.log('?? Cookies 失�?，�?試帳?��?碼登??..');
+        // 策略 1: 使用帳密登入 (優先)
+        if (OIIOII_EMAIL && OIIOII_PASSWORD) {
+            console.log('🔑 使用帳號密碼登入...');
             await page.goto('https://www.oiioii.ai/login', { waitUntil: 'networkidle2' });
+            await new Promise(r => setTimeout(r, 2000));
 
-            // 填寫帳�?
-            await page.type('input[type="email"]', OIIOII_EMAIL, { delay: 50 });
+            // 填寫帳號
+            const emailInput = await page.$('input[type="email"], input[type="text"]');
+            if (emailInput) {
+                await emailInput.type(OIIOII_EMAIL, { delay: 50 });
+                console.log('✅ 已填寫帳號');
+            }
+
             // 填寫密碼
-            await page.type('input[type="password"]', OIIOII_PASSWORD, { delay: 50 });
+            const passInput = await page.$('input[type="password"]');
+            if (passInput) {
+                await passInput.type(OIIOII_PASSWORD, { delay: 50 });
+                console.log('✅ 已填寫密碼');
+            }
 
-            // ?�選?��?條款
+            // 勾選同意條款
             try {
                 const checkbox = await page.$('input[type="checkbox"]');
-                if (checkbox) await checkbox.click();
+                if (checkbox) {
+                    await checkbox.click();
+                    console.log('✅ 已勾選同意條款');
+                }
             } catch (e) { }
 
-            // 點�??��?
-            await Promise.all([
-                page.click('button.ant-btn-primary'),
-                page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => { })
-            ]);
+            await new Promise(r => setTimeout(r, 1000));
 
-            await new Promise(r => setTimeout(r, 5000));
-            loggedIn = true;
+            // 點擊登入按鈕 (嘗試多種方式)
+            const loginClicked = await page.evaluate(() => {
+                // 方法1: 找含有「登」字的按鈕
+                const buttons = Array.from(document.querySelectorAll('button'));
+                for (let btn of buttons) {
+                    const text = btn.innerText || '';
+                    if (text.includes('登') || text.toLowerCase().includes('login') || text.toLowerCase().includes('sign in')) {
+                        btn.click();
+                        return 'button with login text';
+                    }
+                }
+                // 方法2: 找表單中的提交按鈕
+                const formBtn = document.querySelector('form button[type="submit"], form button:last-child');
+                if (formBtn) {
+                    formBtn.click();
+                    return 'form submit button';
+                }
+                // 方法3: 找粉色/主要按鈕
+                const allBtns = document.querySelectorAll('button');
+                if (allBtns.length > 0) {
+                    allBtns[allBtns.length - 1].click();
+                    return 'last button';
+                }
+                return false;
+            });
+
+            if (loginClicked) {
+                console.log(`✅ 已點擊登入按鈕 (${loginClicked})`);
+                await new Promise(r => setTimeout(r, 5000));
+
+                // 檢查是否登入成功
+                const currentUrl = page.url();
+                if (!currentUrl.includes('/login')) {
+                    loggedIn = true;
+                    console.log('✅ 登入成功！');
+                }
+            }
         }
 
+        // 策略 2: 使用 Cookies (備用)
         if (!loggedIn) {
-            throw new Error('?�入失�?！�?檢查 Cookies ?�帳?��?碼設定�?);
+            const cookiesData = getCookiesData();
+            if (cookiesData && cookiesData.cookies) {
+                console.log('🍪 嘗試使用 Cookies 登入...');
+                await page.setCookie(...cookiesData.cookies);
+                await page.goto('https://www.oiioii.ai/', { waitUntil: 'networkidle2' });
+
+                const content = await page.content();
+                loggedIn = content.includes('Free') || content.includes('Point') || content.includes('積分');
+            }
         }
 
-        console.log('???�入?��?，�??��??��???..');
+        // 前往首頁準備簽到
+        console.log('📍 前往首頁...');
         await page.goto('https://www.oiioii.ai/', { waitUntil: 'networkidle2' });
         await new Promise(r => setTimeout(r, 3000));
 
-        // 1. ?��?簽到?��???
-        let pointsBefore = await extractPoints(page);
-        console.log(`?? 簽到?��??? ${pointsBefore}`);
+        // 截圖 (用於診斷)
+        try {
+            await page.screenshot({ path: 'screenshot-before.png', fullPage: false });
+            console.log('📸 已截圖 screenshot-before.png');
+        } catch (e) { }
 
-        // 2. 點�?簽到
+        // 1. 抓取簽到前點數
+        let pointsBefore = await extractPoints(page);
+        console.log(`📊 簽到前點數: ${pointsBefore}`);
+
+        // 2. 點擊簽到
         let clicked = await tryClickCheckinButton(page);
+        console.log(`🖱️ 點擊簽到按鈕: ${clicked ? '成功' : '未找到'}`);
         await new Promise(r => setTimeout(r, 5000));
 
-        // 3. ?��?簽到後�???
+        // 3. 抓取簽到後點數
         let pointsAfter = await extractPoints(page);
-        console.log(`?? 簽到後�??? ${pointsAfter}`);
+        console.log(`📊 簽到後點數: ${pointsAfter}`);
+
+        // 截圖 (用於診斷)
+        try {
+            await page.screenshot({ path: 'screenshot-after.png', fullPage: false });
+            console.log('📸 已截圖 screenshot-after.png');
+        } catch (e) { }
 
         let earned = pointsAfter > pointsBefore ? (pointsAfter - pointsBefore) : (clicked ? 300 : 0);
 
-        // 4. ?�新 Supabase
-        const client = getSupabase();
-        const { data: currentData } = await client.from(TABLE_NAME).select('*').eq('id', 1).single();
+        // 4. 更新 Supabase
+        try {
+            const client = getSupabase();
+            const { data: currentData } = await client.from(TABLE_NAME).select('*').eq('id', 1).single();
 
-        const updateData = {
-            id: 1,
-            current_points: pointsAfter || pointsBefore,
-            earned_points: (currentData?.earned_points || 0) + earned,
-            last_checkin: new Date().toISOString(),
-            status: clicked ? 'success' : 'pending',
-            history: [{
-                time: timeStr,
-                points: earned > 0 ? `+${earned}` : '+0',
-                status: clicked ? 'success' : 'failed'
-            }, ...(currentData?.history || [])].slice(0, 50),
-            updated_at: new Date().toISOString()
-        };
+            const updateData = {
+                id: 1,
+                current_points: pointsAfter || pointsBefore || (currentData?.current_points || 0),
+                earned_points: (currentData?.earned_points || 0) + earned,
+                last_checkin: new Date().toISOString(),
+                status: clicked ? 'success' : 'pending',
+                history: [{
+                    time: timeStr,
+                    points: earned > 0 ? `+${earned}` : '+0',
+                    status: clicked ? 'success' : 'failed'
+                }, ...(currentData?.history || [])].slice(0, 50),
+                updated_at: new Date().toISOString()
+            };
 
-        await client.from(TABLE_NAME).upsert(updateData);
-        console.log(`?? 任�?完�?！獲得�??? ${earned}`);
+            await client.from(TABLE_NAME).upsert(updateData);
+            console.log(`✅ 已更新 Supabase 資料`);
+        } catch (dbError) {
+            console.error(`⚠️ Supabase 更新失敗: ${dbError.message}`);
+        }
+
+        console.log(`🎉 任務完成！獲得點數: ${earned}`);
 
     } catch (error) {
-        console.error(`???��??�錯: ${error.message}`);
+        console.error(`❌ 執行出錯: ${error.message}`);
     } finally {
         if (browser) await browser.close();
     }
@@ -146,21 +211,21 @@ async function checkin() {
 
 async function extractPoints(page) {
     return await page.evaluate(() => {
-        // ?��? 1: 尋找導覽?�中?�數�?
-        const navItems = Array.from(document.querySelectorAll('nav *, .ant-layout-header *'));
+        // 方法 1: 尋找導覽列中的數字
+        const navItems = Array.from(document.querySelectorAll('nav *, header *, [class*="header"] *'));
         for (let el of navItems) {
             const text = el.innerText?.trim();
-            if (text && /^\d[\d,]*$/.test(text)) {
+            if (text && /^\d[\d,]*$/.test(text) && text.length < 8) {
                 return parseInt(text.replace(/,/g, ''));
             }
         }
 
-        // ?��? 2: ?��??��???"Points" ?��??�鄰近數�?
+        // 方法 2: 全域搜尋有 "Points" 文字的鄰近數字
         const bodyText = document.body.innerText;
         const pointMatch = bodyText.match(/(\d[\d,]*)\s*Points/i);
         if (pointMatch) return parseInt(pointMatch[1].replace(/,/g, ''));
 
-        // ?��? 3: 尋找?��?角特定�???
+        // 方法 3: 尋找右上角特定區域
         const possiblePoints = Array.from(document.querySelectorAll('*'))
             .filter(el => {
                 const rect = el.getBoundingClientRect();
@@ -169,7 +234,7 @@ async function extractPoints(page) {
 
         for (let el of possiblePoints) {
             const text = el.innerText?.trim();
-            if (text && /^\d[\d,]*$/.test(text) && text.length < 10) {
+            if (text && /^\d[\d,]*$/.test(text) && text.length < 8) {
                 return parseInt(text.replace(/,/g, ''));
             }
         }
@@ -179,21 +244,21 @@ async function extractPoints(page) {
 }
 
 async function tryClickCheckinButton(page) {
-    let clicked = false;
-    const targets = ['Free', 'Points', '?��?', '簽到'];
-    for (let t of targets) {
-        const btns = await page.$$('button, a, div[role="button"]');
-        for (let btn of btns) {
-            const text = await page.evaluate(el => el.innerText, btn);
-            if (text.includes(t)) {
-                await btn.click();
-                clicked = true;
-                break;
+    return await page.evaluate(() => {
+        const targets = ['Free', 'Points', '領取', '簽到', '免費', 'Claim', 'Daily'];
+        const elements = Array.from(document.querySelectorAll('button, a, div[role="button"], span'));
+
+        for (let target of targets) {
+            for (let el of elements) {
+                const text = el.innerText || '';
+                if (text.includes(target)) {
+                    el.click();
+                    return true;
+                }
             }
         }
-        if (clicked) break;
-    }
-    return clicked;
+        return false;
+    });
 }
 
 checkin();
