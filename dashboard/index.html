@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OiiOii ?�便?��??�</title>
+    <title>OiiOii 領便當專區</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -172,10 +172,6 @@
             margin-bottom: 10px;
         }
 
-        .history-item:last-child {
-            margin-bottom: 0;
-        }
-
         .history-time {
             color: #94a3b8;
             font-size: 0.9rem;
@@ -308,66 +304,67 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>?? OiiOii ?�便?��??�</h1>
-            <p>?��?簽到系統?�?�監??/p>
+            <h1>🎁 OiiOii 領便當專區</h1>
+            <p>自動簽到系統狀態監控</p>
             <div class="realtime-indicator" style="margin-top: 10px;">
                 <span class="realtime-dot"></span>
-                <span>?��??�新</span>
+                <span>即時更新</span>
             </div>
         </div>
 
         <div class="status-card">
             <div class="status-header">
-                <span class="status-title">?? 點數?�??/span>
-                <span class="status-badge success" id="statusBadge">載入�?..</span>
+                <span class="status-title">📊 點數狀態</span>
+                <span class="status-badge success" id="statusBadge">載入中...</span>
             </div>
-
             <div class="points-grid">
                 <div class="points-box current">
-                    <div class="points-label">?��?點數</div>
+                    <div class="points-label">當前點數</div>
                     <div>
                         <span class="points-value" id="currentPoints">--</span>
-                        <span class="points-unit">�?/span>
+                        <span class="points-unit">點</span>
                     </div>
                 </div>
                 <div class="points-box earned">
-                    <div class="points-label">已�?得�???/div>
+                    <div class="points-label">已取得點數</div>
                     <div>
                         <span class="points-value" id="earnedPoints">--</span>
-                        <span class="points-unit">�?/span>
+                        <span class="points-unit">點</span>
                     </div>
                 </div>
             </div>
-
             <div style="text-align: center; margin-top: 20px;">
-                <a href="https://www.oiioii.ai/" target="_blank" class="link-btn">?? ?��? OiiOii.ai</a>
-                <a href="https://github.com/lonlontwo/oiioii-auto-checkin/actions" target="_blank" class="link-btn">??
-                    ?��??��?記�?</a>
+                <a href="https://www.oiioii.ai/" target="_blank" class="link-btn">🔗 前往 OiiOii.ai</a>
+                <a href="https://github.com/lonlontwo/oiioii-auto-checkin/actions" target="_blank" class="link-btn">📋
+                    查看執行記錄</a>
             </div>
         </div>
 
         <div class="history-card">
-            <div class="history-title">?? 簽到記�?</div>
+            <div class="history-title">📜 簽到記錄</div>
             <div class="history-list" id="historyList">
                 <div class="loading">
                     <div class="loading-spinner"></div>
-                    <p style="margin-top: 15px;">載入�?..</p>
+                    <p style="margin-top: 15px;">載入中...</p>
                 </div>
             </div>
         </div>
 
-        <button class="refresh-btn" onclick="loadData()">?? ?�新?��?</button>
-        <div class="last-update" id="lastUpdate">?�後更?��?--</div>
+        <button class="refresh-btn" onclick="loadData()">🔄 重新整理</button>
+        <div class="last-update" id="lastUpdate">最後更新：--</div>
     </div>
 
     <script>
-        // Supabase 設�?
         const SUPABASE_URL = 'https://djmskkwpprhomwmokiwf.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_UUxhIW-g';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqbXNra3dwcHJob213bW9raXdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4Nzg3NTQsImV4cCI6MjA4MzQ1NDc1NH0.sb_publishable_zYStzvFQRRxG2iFGNPYOZQ_UUxhIW-g';
         const TABLE_NAME = 'oiioii便當專員';
 
-        // ?��???Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            console.error('Supabase init error:', e);
+        }
 
         async function loadData() {
             try {
@@ -378,36 +375,31 @@
                     .single();
 
                 if (error) throw error;
-
                 updateUI(data);
             } catch (error) {
-                console.error('載入失�?:', error);
-                document.getElementById('statusBadge').textContent = '??載入失�?';
+                console.error('載入失敗:', error);
+                document.getElementById('statusBadge').textContent = '❌ 載入失敗';
                 document.getElementById('statusBadge').className = 'status-badge error';
+                document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: #ef4444; padding: 20px;">無法連線資料庫</p>';
             }
         }
 
         function updateUI(data) {
-            // ?�新點數
-            document.getElementById('currentPoints').textContent =
-                (data.current_points || 0).toLocaleString();
-            document.getElementById('earnedPoints').textContent =
-                (data.earned_points || 0).toLocaleString();
+            document.getElementById('currentPoints').textContent = (data.current_points || 0).toLocaleString();
+            document.getElementById('earnedPoints').textContent = (data.earned_points || 0).toLocaleString();
 
-            // ?�新?�??
             const badge = document.getElementById('statusBadge');
             if (data.status === 'success') {
-                badge.textContent = '???��?�?;
+                badge.textContent = '✅ 運行中';
                 badge.className = 'status-badge success';
             } else if (data.status === 'error') {
-                badge.textContent = '???�常';
+                badge.textContent = '❌ 異常';
                 badge.className = 'status-badge error';
             } else {
-                badge.textContent = '??等�?�?;
+                badge.textContent = '⏳ 等待中';
                 badge.className = 'status-badge pending';
             }
 
-            // ?�新歷史記�?
             const historyList = document.getElementById('historyList');
             const history = data.history || [];
 
@@ -417,41 +409,19 @@
                         <span class="history-time">${item.time || '--'}</span>
                         <span class="history-points">${item.points || '+0'}</span>
                         <span class="history-status ${item.status === 'success' ? 'success' : 'failed'}">
-                            ${item.status === 'success' ? '?��?' : '失�?'}
+                            ${item.status === 'success' ? '成功' : '失敗'}
                         </span>
                     </div>
                 `).join('');
             } else {
-                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">尚無簽到記�?</p>';
+                historyList.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">尚無簽到記錄</p>';
             }
 
-            // ?�新?��?
-            document.getElementById('lastUpdate').textContent =
-                '?�後更?��?' + new Date().toLocaleString('zh-TW');
+            document.getElementById('lastUpdate').textContent = '最後更新：' + new Date().toLocaleString('zh-TW');
         }
 
-        // 設置?��?訂閱
-        function setupRealtimeSubscription() {
-            supabase
-                .channel('checkin-changes')
-                .on('postgres_changes',
-                    { event: '*', schema: 'public', table: TABLE_NAME },
-                    (payload) => {
-                        console.log('?�到?��??�新:', payload);
-                        if (payload.new) {
-                            updateUI(payload.new);
-                        }
-                    }
-                )
-                .subscribe();
-        }
-
-        // ?��?載入
         loadData();
-        setupRealtimeSubscription();
-
-        // �?30 秒自?�更?��??�用�?
-        setInterval(loadData, 30 * 1000);
+        setInterval(loadData, 30000);
     </script>
 </body>
 
