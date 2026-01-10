@@ -50,9 +50,15 @@ git push -u origin main
 1. 到 GitHub 倉庫頁面
 2. 點擊 **Settings** → **Secrets and variables** → **Actions**
 3. 點擊 **New repository secret**
-4. 名稱填入：`OIIOII_COOKIES`
-5. 值填入：`cookies-base64.txt` 的內容
-6. 點擊 **Add secret**
+4. 添加以下 Secrets：
+
+| 名稱 | 說明 |
+|------|------|
+| `OIIOII_EMAIL` | OiiOii 登入帳號（Email） |
+| `OIIOII_PASSWORD` | OiiOii 登入密碼 |
+| `OIIOII_COOKIES` | （可選）`cookies-base64.txt` 的內容 |
+| `SUPABASE_URL` | Supabase 專案 URL |
+| `SUPABASE_KEY` | Supabase 匿名公開金鑰 |
 
 ### 3. 啟用 Actions
 
